@@ -9,6 +9,7 @@ import SmartDeskAI from './pages/SmartDeskAI.jsx'
 import TicketRal from './pages/TicketRal.jsx'
 import SobreRaly from './pages/SobreRaly.jsx'
 import Apresentacao from './pages/Apresentacao.jsx'
+import Transicao from './components/Transicao.jsx'
 import Fundo3D from './components/Fundo3D.jsx'
 import Agentes from './pages/Agentes.jsx'
 import Entrar from './pages/Entrar.jsx'
@@ -16,16 +17,18 @@ import Conta from './pages/Conta.jsx'
 import Admin from './pages/Admin.jsx'
 import useAuth from './utils/useAuth.js'
 import { MODULOS_ACESSO, podeAcessar, podeTickets } from './data/permissoes.js'
-import Prazy from './pages/Prazy.jsx'
 import Consultas from './pages/Consultas.jsx'
 import Interacoes from './pages/Interacoes.jsx'
+import Operacao from './pages/Operacao.jsx'
+import TicketPassageiro from './components/TicketPassageiro.jsx'
+import { carregarPlataforma, salvarPlataforma } from './utils/armazenamento.js'
+import { trechosDeExemplo } from './utils/trechos.js'
 import { INTERACOES_INICIAIS } from './demo/interacoes.js'
 import { TICKETS_INICIAIS } from './demo/tickets.js'
 import { AUTOMACOES_PADRAO } from './data/automacoes.js'
 import { interpretar } from './utils/comandos.js'
 import { ORDEM_CAMPOS, ROTULOS, resumirCampos } from './utils/extrair.js'
 import { estadoInicialRaly, responderRaly } from './utils/raly.js'
-import { responderPrazy } from './utils/prazy.js'
 import { agoraISO, proximoId } from './utils/datas.js'
 import useVoz from './utils/useVoz.js'
 import { perguntarLLM } from './utils/local.js'
@@ -46,14 +49,42 @@ export default function App() {
   // Navegação simples por estado (sem React Router): página + subpágina.
   const [nav, setNav] = useState({ pagina: 'apresentacao', sub: null })
   const [menuAberto, setMenuAberto] = useState(false)
+  const [trans, setTrans] = useState(null)
+  const timerTrans = useRef(null)
   const [dockAberto, setDockAberto] = useState(false)
   const [tickets, setTickets] = useState(TICKETS_INICIAIS)
   const [interacoes, setInteracoes] = useState(INTERACOES_INICIAIS)
   const [raly, setRaly] = useState(RALY_INICIAL)
-  const [ocorrencias, setOcorrencias] = useState([])
+  // Sprint 2: estado da plataforma (trechos, trecho atual e ocorrências de campo), lido do localStorage ao abrir.
+  const [plataforma] = useState(carregarPlataforma)
+  const [trechos, setTrechos] = useState(plataforma.trechos)
+  const [trechoAtualId, setTrechoAtualId] = useState(plataforma.trechoAtualId)
+  const [ocorrencias, setOcorrencias] = useState(plataforma.ocorrencias)
+  // Registros que o Raly guarda ao confirmar uma revisão (outra coisa; fica separado das ocorrências de campo).
+  const [ocorrenciasRaly, setOcorrenciasRaly] = useState([])
+
+  // Persistência: um único objeto no localStorage, gravado a cada mudança dos três estados.
+  useEffect(() => { salvarPlataforma({ trechos, trechoAtualId, ocorrencias }) }, [trechos, trechoAtualId, ocorrencias])
+
+  function cadastrarTrecho(trecho) {
+    setTrechos((l) => [...l, trecho])
+    setTrechoAtualId(trecho.id) // o trecho recém-criado já vira o atual
+    avisar(`Trecho ${trecho.rodovia} (km ${trecho.kmInicial} ao ${trecho.kmFinal}) cadastrado.`)
+  }
+  function carregarTrechosExemplo() {
+    const novos = trechosDeExemplo()
+    setTrechos((l) => [...l, ...novos])
+    setTrechoAtualId((atual) => atual ?? novos[0].id)
+  }
+  function registrarOcorrencia(oc) {
+    setOcorrencias((l) => [oc, ...l])
+    avisar(`Ocorrência de ${oc.tipo.toLowerCase()} registrada (gravidade ${oc.gravidade.toLowerCase()}).`)
+  }
+  function atualizarStatusOcorrencia(id, status) {
+    setOcorrencias((l) => l.map((o) => (o.id === id ? { ...o, status, atualizadoEm: new Date().toISOString() } : o)))
+  }
   const [automacoes, setAutomacoes] = useState(AUTOMACOES_PADRAO)
   const [logAutomacao, setLogAutomacao] = useState([])
-  const [prazyMsgs, setPrazyMsgs] = useState([])
   const [focoTicket, setFocoTicket] = useState(null)
   const [pendente, setPendente] = useState(null)
   const [falaAtiva, setFalaAtiva] = useState(true)
@@ -71,7 +102,7 @@ export default function App() {
   const processarRef = useRef(null)
   const pularFala = useRef(false) // true enquanto o modelo local prepara a resposta que será falada
   useEffect(() => {
-    vivo.current = { nav, tickets, raly, pendente, falaAtiva, automacoes, ocorrencias, continuo, sessao }
+    vivo.current = { nav, tickets, raly, pendente, falaAtiva, automacoes, ocorrencias: ocorrenciasRaly, continuo, sessao }
   })
 
   const voz = useVoz({
@@ -93,6 +124,14 @@ export default function App() {
     setNav({ pagina, sub })
     setMenuAberto(false)
     window.scrollTo({ top: 0 })
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    window.dispatchEvent(new Event('raly:turbo'))
+    const id = Date.now()
+    const nomes = { apresentacao: 'Início', inicio: 'Painel', entrar: 'Entrar', conta: 'Minha conta', admin: 'Administração', agentes: 'Agentes', raly: 'Raly', ticketral: 'TicketRal', smartdesk: 'SmartDeskAI' }
+    const rotulo = nomes[pagina] || pagina.charAt(0).toUpperCase() + pagina.slice(1)
+    setTrans({ id, rotulo })
+    clearTimeout(timerTrans.current)
+    timerTrans.current = setTimeout(() => setTrans((t) => (t && t.id === id ? null : t)), 650)
   }
   const mudarSub = (sub) => setNav((n) => ({ ...n, sub }))
 
@@ -163,7 +202,7 @@ export default function App() {
   function criarTicketRaly(dados) {
     const id = criarTicket({ ...dados, origem: 'Raly (relato revisado)', autor: 'Raly (simulado)', nota: dados.nota || 'Ticket criado a partir de relato revisado por humano.' })
     setRaly((x) => ({ ...x, ticketId: id }))
-    setOcorrencias((l) => l.map((o, i) => (i === 0 ? { ...o, ticketId: id } : o)))
+    setOcorrenciasRaly((l) => l.map((o, i) => (i === 0 ? { ...o, ticketId: id } : o)))
     avisar(`Ticket de demonstração ${id} criado. Nenhuma mudança foi enviada a sistemas reais.`)
     return id
   }
@@ -178,7 +217,7 @@ export default function App() {
     setRaly((x) => ({ ...x, revisao: 'revisada' }))
     const logs = []
     if (ativa('ocorrencia')) {
-      setOcorrencias((l) => [{ id: `OC-RAL-${String(l.length + 1).padStart(3, '0')}`, quando, campos, resumo, faltando, ticketId: null, autoTicketId: null }, ...l])
+      setOcorrenciasRaly((l) => [{ id: `OC-RAL-${String(l.length + 1).padStart(3, '0')}`, quando, campos, resumo, faltando, ticketId: null, autoTicketId: null }, ...l])
       logs.push('Ocorrência guardada em Raly › Ocorrências.')
     }
     if (ativa('pendencias') && faltando.length > 0 && !sess) {
@@ -191,7 +230,7 @@ export default function App() {
         origem: 'Automação (simulada)', autor: 'Automação (simulada)',
         nota: `Campos não informados: ${faltando.join(', ')}. Prioridade padrão da automação; ajuste manual.`,
       })
-      setOcorrencias((l) => l.map((o, i) => (i === 0 ? { ...o, autoTicketId: id } : o)))
+      setOcorrenciasRaly((l) => l.map((o, i) => (i === 0 ? { ...o, autoTicketId: id } : o)))
       logs.push(`Ticket de pendência ${id} aberto (faltam: ${faltando.join(', ')}).`)
     }
     if (logs.length) setLogAutomacao((l) => [...logs.map((texto) => ({ quando, texto })), ...l])
@@ -205,13 +244,6 @@ export default function App() {
   }
 
   function reiniciarRaly() { setRaly(RALY_INICIAL); setPendente(null) }
-
-  function perguntarPrazy(pergunta) {
-    const r = responderPrazy(pergunta, null)
-    const q = agoraISO()
-    setPrazyMsgs((m) => [...m, { id: `u-${q}`, autor: 'usuario', texto: pergunta, quando: q }, { id: `p-${q}`, autor: 'prazy', texto: r.texto, quando: q, fonte: r.fonte }])
-    return r
-  }
 
   // ---------- Voz e comandos ----------
   function responder(entrada, resposta, origem) {
@@ -260,7 +292,7 @@ export default function App() {
       case 'vazio': return
       case 'ajuda':
         navegar('raly', 'voz')
-        return resp('Posso navegar entre as telas, receber relatos, corrigir campos, pedir confirmação de revisão, criar e consultar tickets (só com coordenador autenticado) e perguntar ao Prazy. Veja a lista completa em Raly, Voz e comandos.')
+        return resp('Posso navegar entre as telas, receber relatos, corrigir campos, pedir confirmação de revisão, criar e consultar tickets (só com coordenador autenticado) e consultar vias. Veja a lista completa em Raly, Voz e comandos.')
       case 'voz_resposta':
         setFalaAtiva(it.ligar)
         setUltimaFala(texto)
@@ -349,11 +381,6 @@ export default function App() {
       }
       case 'via':
         return resp(consultarVia(it.pergunta) || 'Não encontrei essa via na minha base. Diga o número da rodovia, por exemplo BR-116, ou o nome do estado.')
-      case 'prazy': {
-        navegar('prazy', 'conversa')
-        const p = perguntarPrazy(it.pergunta)
-        return resp(`Prazy: ${p.texto}${p.fonte ? ` Fonte: ${p.fonte}.` : ''}`)
-      }
       case 'navegar':
         navegar(it.destino.pagina, it.destino.sub || null)
         return resp(`Abrindo ${it.destino.rotulo}.`)
@@ -386,7 +413,7 @@ export default function App() {
     conteudo = <Entrar auth={auth} navegar={navegar} destino={nav} motivo={auth.sessao ? `Seu perfil não tem acesso a ${m?.rotulo}.` : `${m?.rotulo} é restrito a pessoas autorizadas. Entre com sua conta.`} />
   } else switch (nav.pagina) {
     case 'raly':
-      conteudo = <Raly {...comum} sessao={sessao} ocorrencias={ocorrencias} automacoes={automacoes} logAutomacao={logAutomacao} voz={voz} falaAtiva={falaAtiva}
+      conteudo = <Raly {...comum} sessao={sessao} ocorrencias={ocorrenciasRaly} automacoes={automacoes} logAutomacao={logAutomacao} voz={voz} falaAtiva={falaAtiva}
         onFalaAtiva={setFalaAtiva} onAlternarAutomacao={(id) => setAutomacoes((l) => l.map((a) => (a.id === id ? { ...a, ligada: !a.ligada } : a)))}
         enviarRelato={(t) => responder(t, enviarRelato(t, 'texto'), 'texto')} criarTicketRaly={criarTicketRaly} confirmarRevisao={confirmarRevisao}
         editarCampos={editarCampos} reiniciar={reiniciarRaly} />
@@ -398,7 +425,9 @@ export default function App() {
       conteudo = <SmartDeskAI {...comum} />
       break
     case 'ticketral':
-      conteudo = <TicketRal {...comum} criarTicket={criarTicket} atualizarTicket={atualizarTicket} focoTicket={focoTicket} limparFoco={() => setFocoTicket(null)} />
+      conteudo = auth.sessao?.perfil === 'passageiro'
+        ? <TicketPassageiro usuario={auth.sessao} tickets={tickets} criarTicket={criarTicket} avisar={avisar} />
+        : <TicketRal {...comum} criarTicket={criarTicket} atualizarTicket={atualizarTicket} focoTicket={focoTicket} limparFoco={() => setFocoTicket(null)} />
       break
     case 'agentes':
       conteudo = <Agentes {...comum} sessao={auth.sessao} />
@@ -412,8 +441,10 @@ export default function App() {
     case 'admin':
       conteudo = <Admin {...comum} auth={auth} sessao={auth.sessao} />
       break
-    case 'prazy':
-      conteudo = <Prazy {...comum} mensagens={prazyMsgs} perguntar={(t) => { const p = perguntarPrazy(t); responder(t, `Prazy: ${p.texto}`, 'texto') }} />
+    case 'operacao':
+      conteudo = <Operacao trechos={trechos} trechoAtualId={trechoAtualId} ocorrencias={ocorrencias}
+        onCadastrarTrecho={cadastrarTrecho} onSelecionarTrecho={setTrechoAtualId} onCarregarExemplo={carregarTrechosExemplo}
+        onRegistrarOcorrencia={registrarOcorrencia} onStatusOcorrencia={atualizarStatusOcorrencia} />
       break
     case 'consultas':
       conteudo = <Consultas {...comum} />
@@ -422,7 +453,7 @@ export default function App() {
       conteudo = <Interacoes {...comum} />
       break
     default:
-      conteudo = <Inicio {...comum} sessao={sessao} ocorrencias={ocorrencias} automacoes={automacoes} logAutomacao={logAutomacao} />
+      conteudo = <Inicio {...comum} sessao={sessao} ocorrencias={ocorrenciasRaly} automacoes={automacoes} logAutomacao={logAutomacao} />
   }
 
   const painelRaly = (
@@ -440,6 +471,7 @@ export default function App() {
     return (
       <div className="app app--lp">
         <Fundo3D />
+        {trans && <Transicao key={trans.id} rotulo={trans.rotulo} />}
         <main id="conteudo" tabIndex={-1}><Apresentacao navegar={navegar} voz={voz} /></main>
         {painelRaly}
       </div>
@@ -449,6 +481,7 @@ export default function App() {
   return (
     <div className="app">
       <Fundo3D />
+      {trans && <Transicao key={trans.id} rotulo={trans.rotulo} />}
       <a className="pular" href="#conteudo">Pular para o conteúdo</a>
       <Header onAbrirMenu={() => setMenuAberto((v) => !v)} menuAberto={menuAberto} sessao={auth.sessao} onEntrar={() => navegar('entrar')} onSair={sairCoordenador} onInicio={() => navegar('apresentacao')} />
       <div className="app__corpo">
