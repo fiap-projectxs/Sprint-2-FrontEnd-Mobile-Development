@@ -18,7 +18,7 @@ export default function Header({ onAbrirMenu, menuAberto, sessao, onEntrar, onSa
         <RalyLogo tamanho={38} />
         <div>
           <strong className="header__nome">Raly</strong>
-          <span className="header__sub">Plataforma de voz · SmartDeskAI · TicketRal · Prazy</span>
+          <span className="header__sub">Plataforma de voz · SmartDeskAI · TicketRal</span>
         </div>
       </button>
       {sessao && (

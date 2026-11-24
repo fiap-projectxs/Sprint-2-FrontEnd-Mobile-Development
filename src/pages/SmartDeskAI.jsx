@@ -108,11 +108,9 @@ function Areas({ navegar, mudarSub, estado }) {
           <p className="texto-suave">Para quem usa a rodovia: registrar uma solicitação, acompanhar o andamento e tirar dúvidas antes de falar com uma pessoa.</p>
           <ul className="lista-simples">
             <li><Icon nome="check" tamanho={16} /> <span>Abrir e acompanhar solicitações no SmartDeskAI.</span></li>
-            <li><Icon nome="compass" tamanho={16} /> <span>Dúvidas gerais de viagem com o Prazy.</span></li>
           </ul>
           <div className="area__acoes">
             <button type="button" className="btn btn--primario" onClick={() => mudarSub('app')}><Icon nome="inbox" tamanho={16} /> Abrir atendimento</button>
-            <button type="button" className="btn btn--secundario" onClick={() => navegar('prazy', 'conversa')}><Icon nome="compass" tamanho={16} /> Falar com o Prazy</button>
           </div>
         </section>
 

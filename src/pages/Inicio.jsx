@@ -12,9 +12,8 @@ ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip)
 
 const MODULOS = [
   { id: 'raly', sub: 'conversa', icone: 'mic', nome: 'Raly', publico: 'A plataforma principal', texto: 'Agente de voz para apoio operacional. Recebe relatos por voz ou texto, organiza as informações, comanda as outras telas e prepara um resumo para revisão humana.' },
-  { id: 'smartdesk', sub: 'areas', icone: 'inbox', nome: 'SmartDeskAI', publico: 'Passageiros e agentes · futuro app', texto: 'Central de atendimento do grupo, a aplicação própria rodando integrada à plataforma: solicitações, filas e encaminhamentos. Serve aos dois públicos, com áreas gerais próprias. A evolução prevista é virar um app.' },
-  { id: 'ticketral', sub: 'lista', icone: 'ticket', nome: 'TicketRal', publico: 'Restrito · coordenador de trânsito', texto: 'App do coordenador de trânsito, com login. Tickets operacionais com categoria, prioridade, equipe, trecho, horário e histórico de atualizações.' },
-  { id: 'prazy', sub: 'conversa', icone: 'compass', nome: 'Prazy', publico: 'Passageiros', texto: 'Guia simples para usuários da rodovia. Só responde com conteúdo de demonstração e informa quando não consegue confirmar.' },
+  { id: 'smartdesk', sub: 'areas', icone: 'inbox', nome: 'SmartDeskAI', publico: 'Equipe de trânsito na CCO', texto: 'Central de atendimento do grupo, a aplicação própria rodando integrada à plataforma: solicitações, filas e encaminhamentos. Serve aos dois públicos, com áreas gerais próprias. A evolução prevista é virar um app.' },
+  { id: 'ticketral', sub: 'lista', icone: 'ticket', nome: 'TicketRal', publico: 'Passageiro · ticket e suporte', texto: 'App do coordenador de trânsito, com login. Tickets operacionais com categoria, prioridade, equipe, trecho, horário e histórico de atualizações.' },
 ]
 
 export default function Inicio({ tickets, raly, sessao, navegar, ocorrencias, automacoes }) {
@@ -43,7 +42,7 @@ export default function Inicio({ tickets, raly, sessao, navegar, ocorrencias, au
         <h1>Uma plataforma para organizar a informação de quem opera e de quem usa a rodovia</h1>
         <p>
           O problema escolhido: o profissional de campo precisa registrar e consultar informações sem digitar e sem perder a atenção da via.
-          O Raly é o agente de voz e o coração desta plataforma: é ele que comanda as demais frentes. O SmartDeskAI atende passageiros e agentes, o TicketRal é o app do coordenador de trânsito (acesso com login) e o Prazy é o guia dos passageiros.
+          O Raly é o agente de voz e o coração desta plataforma: é ele que comanda as demais frentes. O Raly é para o profissional de trânsito nas rodovias, o SmartDeskAI é da equipe de trânsito na CCO e o TicketRal é o canal do passageiro para registrar ticket ou falar com o suporte. O Prazy foi retirado do projeto.
         </p>
         <div className="hero__acoes">
           <button type="button" className="btn btn--primario" onClick={() => navegar('raly', 'conversa')}><Icon nome="mic" /> Falar com o Raly</button>

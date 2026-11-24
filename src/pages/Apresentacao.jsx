@@ -171,7 +171,7 @@ export default function Apresentacao({ navegar, voz }) {
     window.addEventListener('scroll', aoRolar, { passive: true })
     return () => window.removeEventListener('scroll', aoRolar)
   }, [])
-  const rolar = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+  const rolar = (id) => { window.dispatchEvent(new Event('raly:turbo')); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }) }
 
   return (
     <div className="lp" ref={palcoRef}>

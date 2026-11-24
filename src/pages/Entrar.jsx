@@ -36,14 +36,34 @@ export default function Entrar({ auth, navegar, motivo, destino }) {
     else navegar('inicio')
   }
 
+  const passos = aba === 'criar'
+    ? [{ ok: nome.trim().length >= 2, r: 'Nome' }, { ok: /^\S+@\S+\.\S+$/.test(usuario), r: 'E-mail' }, { ok: senha.length >= 8, r: 'Senha' }]
+    : [{ ok: /^\S+@\S+\.\S+$/.test(usuario), r: 'E-mail' }, { ok: senha.length >= 1, r: 'Senha' }]
+  const feitos = passos.filter((p) => p.ok).length
+  const estado = carregando ? 'falando' : (usuario || senha || nome) ? 'ouvindo' : 'pronto'
+  const beneficios = aba === 'entrar'
+    ? [['mic', 'Raly por voz', 'Converse com o assistente das rodovias.'], ['lock', 'Acesso por perfil', 'Cada módulo aparece para quem pode usar.'], ['info', 'Tudo no navegador', 'Sem servidor, só demonstração.']]
+    : [['mic', 'Conta de passageiro', 'Registre um ticket ou fale com o suporte.'], ['lock', 'Senha com hash', 'Guardada protegida neste navegador.'], ['info', 'Perfis especiais', 'Agente, coordenador e admin vêm do administrador.']]
+
   return (
     <div className="pagina">
       <div className="login">
-        <section className="login__cartao">
-          <span className="login__rosto"><RalyRosto tamanho={64} /></span>
-          <h1>{aba === 'entrar' ? 'Entrar no Raly' : 'Criar conta de passageiro'}</h1>
+        <section className="login__cartao login__cartao--vivo" key={aba}>
+          <div className="login__topo">
+            <span className="login__rosto"><RalyRosto tamanho={72} estado={estado} /></span>
+            <div>
+              <h1>{aba === 'entrar' ? 'Bem-vindo de volta' : 'Crie sua conta'}</h1>
+              <p className="texto-suave">{aba === 'entrar' ? 'Entre para liberar os módulos do seu perfil.' : 'Leva menos de um minuto. Preencha os três passos.'}</p>
+            </div>
+          </div>
           {motivo && <p className="aviso aviso--info" role="status"><Icon nome="lock" tamanho={16} /> {motivo}</p>}
           <SubNav itens={[{ id: 'entrar', rotulo: 'Entrar' }, { id: 'criar', rotulo: 'Criar conta' }]} atual={aba} onMudar={(a) => { setAba(a); setErro('') }} rotulo="Entrar ou criar conta" />
+          <ol className="passos" aria-label="Progresso do formulário">
+            {passos.map((p, i) => (
+              <li key={p.r} className={p.ok ? 'passos__ok' : ''}><span>{p.ok ? '✓' : i + 1}</span>{p.r}</li>
+            ))}
+            <li className="passos__trilha" aria-hidden="true"><i style={{ width: `${(feitos / passos.length) * 100}%` }} /></li>
+          </ol>
           <form onSubmit={enviar} className="login__form" noValidate>
             {aba === 'criar' && <Texto rotulo="Nome" valor={nome} onChange={setNome} id="login-nome" obrigatorio />}
             <Texto rotulo="E-mail" valor={usuario} onChange={setUsuario} tipo="email" id="login-usuario" obrigatorio />
@@ -53,20 +73,29 @@ export default function Entrar({ auth, navegar, motivo, destino }) {
             </div>
             {aba === 'criar' && <Forca senha={senha} />}
             {erro && <p className="aviso aviso--erro" role="alert">{erro}</p>}
-            <button type="submit" className="btn btn--primario" disabled={carregando || !auth.pronto}>
+            <button type="submit" className="btn btn--primario login__enviar" disabled={carregando || !auth.pronto}>
               <Icon nome="lock" tamanho={16} /> {carregando ? 'Verificando…' : aba === 'entrar' ? 'Entrar' : 'Criar conta e entrar'}
             </button>
           </form>
-          {aba === 'criar' && <p className="texto-suave">Contas criadas aqui são de passageiro. Outros perfis são criados pelo administrador.</p>}
+          <p className="texto-suave login__troca">
+            {aba === 'entrar' ? 'Ainda não tem conta? ' : 'Já tem conta? '}
+            <button type="button" className="link-botao" onClick={() => { setAba(aba === 'entrar' ? 'criar' : 'entrar'); setErro('') }}>{aba === 'entrar' ? 'Criar agora' : 'Entrar'}</button>
+          </p>
         </section>
 
-        <aside className="login__lado">
-          <h2>Cada perfil, seu acesso</h2>
-          <p className="texto-suave">Passageiros usam o Prazy e o SmartDeskAI. Agentes de campo usam também o Raly. O TicketRal é só de coordenadores e administradores.</p>
-          <p className="texto-suave"><Icon nome="info" tamanho={14} /> Login simulado no navegador, sem segurança real. As senhas ficam protegidas por hash neste navegador. O e-mail é validado só no formato.</p>
+        <aside className="login__lado" key={`lado-${aba}`}>
+          <h2>{aba === 'entrar' ? 'Cada perfil, seu acesso' : 'O que você ganha'}</h2>
+          <ul className="login__beneficios">
+            {beneficios.map(([ic, t, d]) => (
+              <li key={t}><span className="login__ic"><Icon nome={ic} tamanho={18} /></span><div><strong>{t}</strong><p className="texto-suave">{d}</p></div></li>
+            ))}
+          </ul>
+          <div className="login__perfis" aria-label="Perfis de acesso">
+            <span>Passageiro</span><span>Agente</span><span>Coordenador</span><span>Admin</span>
+          </div>
+          <p className="texto-suave"><Icon nome="info" tamanho={14} /> Login simulado no navegador, sem segurança real. O e-mail é validado só no formato.</p>
         </aside>
       </div>
     </div>
   )
 }
-

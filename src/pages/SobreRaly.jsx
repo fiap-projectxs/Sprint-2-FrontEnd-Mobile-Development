@@ -96,20 +96,16 @@ export default function SobreRaly({ sub, mudarSub, navegar }) {
       {atual === 'marca' && (
         <>
           <div className="grade grade--2">
-            <Card titulo="Símbolo e rosto" subtitulo="Dois sinais que se reconhecem de longe">
+            <Card titulo="Mascote" subtitulo="O robozinho das rodovias">
               <div className="marca-sinais">
                 <figure>
-                  <RalyLogo tamanho={96} />
-                  <figcaption><strong>Símbolo.</strong> Um “R” de rodovia, com a faixa tracejada no traço e ondas de voz.</figcaption>
-                </figure>
-                <figure>
-                  <RalyRosto tamanho={96} titulo="Rosto do Raly" />
-                  <figcaption><strong>Rosto.</strong> Viseira, olhos de farol e antena com luz de sinalização. Nem pessoa, nem bicho.</figcaption>
+                  <RalyLogo tamanho={120} />
+                  <figcaption><strong>Mascote.</strong> Cabeça de robô, viseira escura, olhos ciano e antena com luz de sinalização. Nem pessoa, nem bicho.</figcaption>
                 </figure>
               </div>
               <div className="marca-fundos">
-                <div className="marca-fundo marca-fundo--escuro"><RalyRosto tamanho={56} /><RalyLogo tamanho={56} /></div>
-                <div className="marca-fundo marca-fundo--claro"><RalyRosto tamanho={56} /><RalyLogo tamanho={56} /></div>
+                <div className="marca-fundo marca-fundo--escuro"><RalyLogo tamanho={56} /><RalyLogo tamanho={36} /></div>
+                <div className="marca-fundo marca-fundo--claro"><RalyLogo tamanho={56} /><RalyLogo tamanho={36} /></div>
               </div>
             </Card>
             <Card titulo="Cores" subtitulo="Azul-marinho para confiança, roxo para voz e ação">

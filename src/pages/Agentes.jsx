@@ -36,7 +36,7 @@ function Visao({ navegar, mudarSub, sessao }) {
 }
 
 function Detalhe({ agente, navegar, sessao }) {
-  const quem = (agente.modulo === 'prazy' ? ['passageiro', 'agente', 'coordenador', 'admin'] : agente.modulo === 'ticketral' ? ['coordenador', 'admin'] : agente.modulo === 'raly' ? ['agente', 'coordenador', 'admin'] : ['passageiro', 'agente', 'coordenador', 'admin'])
+  const quem = (agente.modulo === 'smartdesk' ? ['coordenador', 'admin'] : agente.modulo === 'ticketral' ? ['passageiro', 'coordenador', 'admin'] : agente.modulo === 'raly' ? ['agente', 'coordenador', 'admin'] : ['passageiro', 'agente', 'coordenador', 'admin'])
   return (
     <div className="agente-detalhe">
       <section className="card">

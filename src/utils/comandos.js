@@ -16,11 +16,9 @@ export const DESTINOS = [
   { pagina: 'smartdesk', sub: 'conexao', rotulo: 'SmartDeskAI · Conexão com o Raly', chaves: ['conexao', 'conexao do smartdesk', 'status do smartdesk'] },
   { pagina: 'ticketral', sub: 'quadro', rotulo: 'TicketRal · Quadro', chaves: ['quadro', 'kanban'] },
   { pagina: 'ticketral', sub: 'pendencias', rotulo: 'TicketRal · Pendências', chaves: ['pendencias', 'pendencia'] },
-  { pagina: 'prazy', sub: 'conteudo', rotulo: 'Prazy · Conteúdo disponível', chaves: ['conteudo do prazy', 'temas e fontes', 'fontes do prazy'] },
   { pagina: 'inicio', rotulo: 'Visão geral', chaves: ['inicio', 'visao geral', 'painel geral', 'pagina inicial', 'home'] },
   { pagina: 'smartdesk', sub: 'app', rotulo: 'SmartDeskAI', chaves: ['smartdesk', 'smart desk', 'smartdeskai', 'solicitacoes', 'caixa de entrada', 'atendimento'] },
   { pagina: 'ticketral', sub: 'lista', rotulo: 'TicketRal', chaves: ['ticketral', 'ticket ral', 'tickets', 'ticket'] },
-  { pagina: 'prazy', sub: 'conversa', rotulo: 'Prazy', chaves: ['prazy', 'guia do usuario'] },
   { pagina: 'consultas', rotulo: 'Consultas', chaves: ['consultas', 'trechos'] },
   { pagina: 'interacoes', rotulo: 'Interações', chaves: ['interacoes', 'historico de comandos', 'historico'] },
   { pagina: 'raly', sub: 'conversa', rotulo: 'Raly', chaves: ['raly', 'assistente', 'conversa'] },
@@ -91,26 +89,21 @@ export function interpretar(texto, ctx = {}) {
 
   if (/^(o que e|qual e|qual|onde fica|onde passa|por onde passa|me fale|fale|fala|informacoes?|quais|como e|extensao|telefones?)\b.*\b(br[- ]?\d{2,3}|(ac|al|ap|am|ba|ce|df|es|go|ma|mt|ms|mg|pa|pb|pr|pe|pi|rj|rn|rs|ro|rr|sc|sp|se|to)[- ]\d{1,3}|rodovias?|estradas?|dutra|fernao dias|anhanguera|bandeirantes|imigrantes|anchieta|transamazonica|regis bittencourt|castello branco|castelo branco|emergencia)\b/.test(t) && !/\bticket\b/.test(t)) return { tipo: 'via', pergunta: original }
 
-  const pz = t.match(/^(?:perguntar|pergunte|perguntar|pergunta)\s+(?:ao|para o|pro)\s+prazy[,: ]*(.+)$/) || t.match(/^prazy[,: ]+(.+)$/)
-  if (pz) return { tipo: 'prazy', pergunta: pz[1] }
-
   const verbo = t.match(/^(?:abrir|abre|abra|ir para|ir pra|va para|vai para|mostrar|mostre|ver|veja|navegar para|ir ao|ir a)\s+(?:a |o |as |os |na |no |ao |para )?(.+)$/)
   const alvo = acharDestino(verbo ? verbo[1] : t)
   const perguntaSobre = /^(quem e|o que e|sobre|como (o raly )?(trabalha|funciona))\b.*\braly\b|^como o raly (trabalha|funciona)/.test(t)
   if (alvo && (verbo || perguntaSobre || t.split(' ').length <= 3)) return { tipo: 'navegar', destino: alvo }
 
-  if (ctx.pagina === 'prazy') return { tipo: 'prazy', pergunta: original }
   return { tipo: 'relato', texto: original }
 }
 
 export const AJUDA_COMANDOS = [
-  ['Navegar', '“Abrir tickets”, “abrir SmartDeskAI”, “abrir quadro”, “abrir Prazy”, “abrir consultas”'],
+  ['Navegar', '“Abrir tickets”, “abrir SmartDeskAI”, “abrir quadro”, “abrir consultas”'],
   ['Relatar', '“Veículo parado no acostamento, DEMO-101, km 42, sentido interior”'],
   ['Corrigir', '“Corrigir sentido para capital”, “corrigir município para Exemplo A”'],
   ['Revisar', '“Confirmar revisão” e depois “sim, confirmo”'],
   ['Ticket', '“Criar ticket” (só depois da revisão) e depois “sim, confirmo”'],
   ['Consultar', '“Quantos tickets abertos?”, “ticket 101”, “panorama”'],
   ['Atualizar', '“Atualizar status do ticket 101 para em andamento” e depois “sim”'],
-  ['Prazy', '“Perguntar ao Prazy o que fazer se o carro parar”'],
   ['Outros', '“Ler resumo da ocorrência”, “novo relato”, “desativar resposta falada”, “ajuda”'],
 ]
