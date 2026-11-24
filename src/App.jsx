@@ -425,7 +425,9 @@ export default function App() {
       conteudo = <SmartDeskAI {...comum} />
       break
     case 'ticketral':
-      conteudo = auth.sessao?.perfil === 'passageiro'
+      conteudo = !auth.sessao
+        ? <Entrar auth={auth} navegar={navegar} destino={{ pagina: 'ticketral', sub: null }} permitirCriar />
+        : auth.sessao.perfil === 'passageiro'
         ? <TicketPassageiro usuario={auth.sessao} tickets={tickets} criarTicket={criarTicket} avisar={avisar} />
         : <TicketRal {...comum} criarTicket={criarTicket} atualizarTicket={atualizarTicket} focoTicket={focoTicket} limparFoco={() => setFocoTicket(null)} />
       break
@@ -458,11 +460,11 @@ export default function App() {
 
   const painelRaly = (
     <>
-      <RalyDock
+      {auth.sessao && (<RalyDock
         voz={voz} falaAtiva={falaAtiva} onFalaAtiva={setFalaAtiva} continuo={continuo} onContinuo={(v) => { voz.parar(); setContinuo(v) }}
         ultimaFala={ultimaFala} ultimaResposta={ultimaResposta} pendente={pendente} aberto={dockAberto} onAbrir={() => setDockAberto((v) => !v)}
-        onTexto={(t) => processar(t, 'texto')}
-      />
+        onTexto={(t) => processar(t, 'texto')} logado={Boolean(auth.sessao)}
+      />)}
       <Toasts itens={toasts} onFechar={(id) => setToasts((t) => t.filter((x) => x.id !== id))} />
     </>
   )
@@ -472,7 +474,7 @@ export default function App() {
       <div className="app app--lp">
         <Fundo3D />
         {trans && <Transicao key={trans.id} rotulo={trans.rotulo} />}
-        <main id="conteudo" tabIndex={-1}><Apresentacao navegar={navegar} voz={voz} /></main>
+        <main id="conteudo" tabIndex={-1}><Apresentacao navegar={navegar} voz={voz} entrar={() => { if (auth.sessao) navegar(auth.sessao.perfil === 'passageiro' ? 'ticketral' : 'inicio'); else navegar('entrar') }} /></main>
         {painelRaly}
       </div>
     )

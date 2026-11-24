@@ -1,8 +1,8 @@
 // Perfis e o que cada um pode abrir. null = público; 'logado' = qualquer pessoa autenticada.
 export const PERFIS = {
-  passageiro: { rotulo: 'Passageiro', descricao: 'Registra ticket e fala com o suporte pelo TicketRal.' },
-  agente: { rotulo: 'Agente de campo', descricao: 'Registra ocorrências com o Raly e usa o SmartDeskAI.' },
-  coordenador: { rotulo: 'Equipe de trânsito (CCO)', descricao: 'Tudo do agente, mais o SmartDeskAI e a fila de tickets.' },
+  passageiro: { rotulo: 'Passageiro', descricao: 'Usa só o TicketRal: reporta problemas na via, fala com o suporte e avisa erros do app.' },
+  agente: { rotulo: 'Profissional de trânsito', descricao: 'Usa o Raly nas rodovias: ocorrências, consultas e interações. Não abre o SmartDeskAI.' },
+  coordenador: { rotulo: 'Equipe de trânsito (CCO)', descricao: 'Tudo do profissional, mais o SmartDeskAI e a fila de tickets.' },
   admin: { rotulo: 'Administrador', descricao: 'Tudo, mais o painel administrativo.' },
 }
 export const LISTA_PERFIS = Object.keys(PERFIS)
@@ -23,7 +23,12 @@ export const MODULOS_ACESSO = [
   { id: 'entrar', rotulo: 'Entrar', quem: null },
 ]
 
+// Passageiro só usa o TicketRal (e as páginas informativas e a própria conta).
+const PASSAGEIRO_ABRE = ['apresentacao', 'sobre', 'agentes', 'ticketral', 'conta', 'entrar']
+
 export function podeAcessar(pagina, sessao) {
+  if (pagina === 'ticketral' && !sessao) return true // a porta de entrada do passageiro (entrar ou criar conta) fica dentro do TicketRal
+  if (sessao?.perfil === 'passageiro') return PASSAGEIRO_ABRE.includes(pagina)
   const m = MODULOS_ACESSO.find((x) => x.id === pagina)
   if (!m || m.quem === null) return true
   if (!sessao) return false

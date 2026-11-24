@@ -28,9 +28,6 @@ export default function Header({ onAbrirMenu, menuAberto, sessao, onEntrar, onSa
         </span>
       )}
       {!sessao && <button type="button" className="btn btn--primario btn--pequeno" onClick={onEntrar}>Entrar</button>}
-      <span className="selo-demo" title="Todos os dados e fluxos desta plataforma são fictícios">
-        <Icon nome="info" tamanho={14} /> Ambiente demonstrativo
-      </span>
     </header>
   )
 }

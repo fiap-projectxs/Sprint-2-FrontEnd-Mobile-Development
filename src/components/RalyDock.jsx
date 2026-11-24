@@ -7,7 +7,7 @@ const RalyRosto3D = lazy(() => import('./RalyRosto3D.jsx'))
 import PersonalizarVoz from './PersonalizarVoz.jsx'
 
 // Painel fixo do Raly, presente em todas as telas: voz, texto e respostas.
-export default function RalyDock({ voz, falaAtiva, onFalaAtiva, continuo, onContinuo, ultimaFala, ultimaResposta, pendente, onTexto, aberto, onAbrir }) {
+export default function RalyDock({ voz, falaAtiva, onFalaAtiva, continuo, onContinuo, ultimaFala, ultimaResposta, pendente, onTexto, aberto, onAbrir, logado }) {
   const [texto, setTexto] = useState('')
   const estado = voz.ouvindo ? 'Ouvindo…' : voz.falando ? 'Falando…' : 'Pronto'
 
@@ -57,7 +57,7 @@ export default function RalyDock({ voz, falaAtiva, onFalaAtiva, continuo, onCont
             <label className="marcar"><input type="checkbox" checked={continuo} onChange={(e) => onContinuo(e.target.checked)} disabled={!voz.suportaReconhecimento} /> <span>Escuta contínua (comece com “Raly”)</span></label>
           </div>
           {voz.suportaFala && voz.vozPt === false && <p className="dock__aviso--voz" role="status">Sem voz em português neste computador: o Raly não vai falar em inglês e mostra só o texto. Instale uma voz “Português (Brasil)” ou use o Edge.</p>}
-          <PersonalizarVoz voz={voz} compacto />
+          {logado && <PersonalizarVoz voz={voz} compacto />}
           <p className="dock__nota">O áudio é processado pelo serviço de voz do navegador. Esta demonstração não grava nem envia o áudio.</p>
         </div>
       )}

@@ -10,7 +10,6 @@ import SubNav from '../components/SubNav.jsx'
 import { Selecao, Texto } from '../components/Campo.jsx'
 import { LISTA_PERFIS, MODULOS_ACESSO, PERFIS, podeAcessar } from '../data/permissoes.js'
 import { CATEGORIAS_TICKET, STATUS_TICKET } from '../data/tickets.js'
-import { forcaSenha } from '../utils/auth.js'
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip)
 
@@ -114,39 +113,10 @@ function Visao({ auth, tickets, interacoes, ocorrencias }) {
   )
 }
 
-function FormUsuario({ onSalvar, onFechar }) {
-  const [f, setF] = useState({ nome: '', usuario: '', senha: '', perfil: 'agente' })
-  const [erro, setErro] = useState('')
-  const set = (k) => (v) => setF((x) => ({ ...x, [k]: v }))
-  const fs = forcaSenha(f.senha)
-  async function enviar(e) {
-    e.preventDefault()
-    const r = await onSalvar(f)
-    if (!r.ok) setErro(r.erro); else onFechar()
-  }
-  return (
-    <Modal titulo="Novo usuário" onFechar={onFechar}>
-      <form onSubmit={enviar} className="login__form" noValidate>
-        <Texto rotulo="Nome" valor={f.nome} onChange={set('nome')} id="nu-nome" obrigatorio />
-        <Texto rotulo="E-mail" valor={f.usuario} onChange={set('usuario')} tipo="email" id="nu-usuario" obrigatorio />
-        <Selecao rotulo="Perfil" valor={f.perfil} onChange={set('perfil')} opcoes={LISTA_PERFIS} todas={null} id="nu-perfil" />
-        <Texto rotulo="Senha inicial (mín. 8 caracteres)" valor={f.senha} onChange={set('senha')} tipo="password" id="nu-senha" obrigatorio />
-        {f.senha && <p className="texto-suave">Força da senha: {fs.rotulo}</p>}
-        {erro && <p className="aviso aviso--erro" role="alert">{erro}</p>}
-        <div className="acoes">
-          <button type="submit" className="btn btn--primario"><Icon nome="plus" tamanho={16} /> Criar usuário</button>
-          <button type="button" className="btn btn--secundario" onClick={onFechar}>Cancelar</button>
-        </div>
-      </form>
-    </Modal>
-  )
-}
-
 function Usuarios({ auth, avisar }) {
   const [busca, setBusca] = useState('')
   const [fPerfil, setFPerfil] = useState('')
   const [fStatus, setFStatus] = useState('')
-  const [novo, setNovo] = useState(false)
   const [senhaDe, setSenhaDe] = useState(null)
   const [novaSenha, setNovaSenha] = useState('')
   const [erroSenha, setErroSenha] = useState('')
@@ -167,10 +137,9 @@ function Usuarios({ auth, avisar }) {
     <>
       <Card
         titulo="Usuários"
-        subtitulo="Crie contas, mude perfis, desative acessos e redefina senhas"
+        subtitulo="Mude perfis, desative acessos e redefina senhas. Só o TicketRal cria contas (de passageiro)"
         acoes={<div className="acoes">
           <button type="button" className="btn btn--secundario" onClick={() => baixar('usuarios.csv', csv([['ID', 'Nome', 'Usuário', 'Perfil', 'Ativo', 'Criado em', 'Último acesso'], ...auth.usuarios.map((u) => [u.id, u.nome, u.usuario, PERFIS[u.perfil].rotulo, u.ativo ? 'sim' : 'não', u.criadoEm, u.ultimoAcesso])]))}>Exportar CSV</button>
-          <button type="button" className="btn btn--primario" onClick={() => setNovo(true)}><Icon nome="plus" tamanho={16} /> Novo usuário</button>
         </div>}
       >
         <div className="filtros">
@@ -212,7 +181,6 @@ function Usuarios({ auth, avisar }) {
         )}
       </Card>
 
-      {novo && <FormUsuario onFechar={() => setNovo(false)} onSalvar={async (d) => { const r = await auth.criarUsuario(d, autor); if (r.ok) avisar(`Usuário ${d.usuario} criado.`); return r }} />}
 
       {senhaDe && (
         <Modal titulo={`Redefinir senha de ${senhaDe.nome}`} onFechar={() => setSenhaDe(null)}>

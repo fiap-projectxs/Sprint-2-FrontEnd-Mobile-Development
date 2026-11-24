@@ -9,6 +9,9 @@ export default function Conta({ auth, avisar, navegar }) {
   const [atual, setAtual] = useState('')
   const [nova, setNova] = useState('')
   const [erro, setErro] = useState('')
+  const [novoLogin, setNovoLogin] = useState('')
+  const [senhaLogin, setSenhaLogin] = useState('')
+  const [erroLogin, setErroLogin] = useState('')
   const me = auth.usuarios.find((u) => u.id === sessao.id)
 
   async function trocar(e) {
@@ -17,6 +20,14 @@ export default function Conta({ auth, avisar, navegar }) {
     if (!r.ok) { setErro(r.erro); return }
     setErro(''); setAtual(''); setNova('')
     avisar('Senha alterada.')
+  }
+
+  async function trocarLogin(e) {
+    e.preventDefault()
+    const r = await auth.alterarLogin(novoLogin, senhaLogin)
+    if (!r.ok) { setErroLogin(r.erro); return }
+    setErroLogin(''); setNovoLogin(''); setSenhaLogin('')
+    avisar('Login alterado.')
   }
 
   return (
@@ -28,6 +39,7 @@ export default function Conta({ auth, avisar, navegar }) {
         </div>
         <button type="button" className="btn btn--secundario" onClick={() => { auth.sair(); navegar('apresentacao') }}><Icon nome="logout" tamanho={16} /> Sair</button>
       </div>
+      {me?.senhaInicial && <p className="aviso aviso--info" role="status"><Icon nome="lock" tamanho={16} /> Você ainda usa a senha inicial desta área. Troque a senha abaixo.</p>}
       <div className="grade grade--2">
         <Card titulo="Perfil">
           <dl className="dados">
@@ -49,6 +61,14 @@ export default function Conta({ auth, avisar, navegar }) {
             <Texto rotulo="Nova senha (mín. 8 caracteres)" valor={nova} onChange={setNova} tipo="password" id="conta-nova" obrigatorio />
             {erro && <p className="aviso aviso--erro" role="alert">{erro}</p>}
             <button type="submit" className="btn btn--primario" disabled={!atual || !nova}><Icon nome="lock" tamanho={16} /> Alterar senha</button>
+          </form>
+        </Card>
+        <Card titulo="Alterar login">
+          <form onSubmit={trocarLogin} className="login__form" noValidate>
+            <Texto rotulo={sessao.perfil === 'passageiro' ? 'Novo e-mail' : 'Novo login'} valor={novoLogin} onChange={setNovoLogin} id="conta-login" obrigatorio />
+            <Texto rotulo="Senha atual" valor={senhaLogin} onChange={setSenhaLogin} tipo="password" id="conta-login-senha" obrigatorio />
+            {erroLogin && <p className="aviso aviso--erro" role="alert">{erroLogin}</p>}
+            <button type="submit" className="btn btn--primario" disabled={!novoLogin || !senhaLogin}><Icon nome="lock" tamanho={16} /> Alterar login</button>
           </form>
         </Card>
       </div>

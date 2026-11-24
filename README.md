@@ -85,6 +85,13 @@ A Sprint 2 evolui o MVP para algo que o profissional de campo realmente usa. A t
 6. **Atualiza o status** de cada ocorrência: aberta, em atendimento ou resolvida.
 7. **Persiste no navegador:** F5 não apaga nada.
 
+### Ajustes de interface (Sprint 2)
+
+- **Login limpo:** cartão único "Entrar no Raly", só com usuário e senha, sem painel lateral de perfis e sem passos extras.
+- **Botão "Entrar na plataforma"** (página inicial): abre o login, ou o início se já há sessão (passageiro vai direto ao TicketRal).
+- Removido o selo "Ambiente demonstrativo" do cabeçalho.
+- **Nova paleta:** azul-marinho `#1b2e49`, azul-petróleo `#0b6f86`, ciano `#5fd0e6`, âmbar `#f5c266` e cinza névoa `#adb4be` (card Cores em Sobre o Raly).
+
 ### Como o estado está organizado
 
 O `App.jsx` concentra o estado e passa dados e funções por props:
@@ -154,15 +161,24 @@ O servidor responde só a páginas locais (`localhost`) e nada sai do computador
 
 ## Contas e níveis de acesso
 
-O login é por **e-mail e senha**. O e-mail é validado só no formato; confirmar a caixa de e-mail exige um servidor. Perfis: **passageiro**, **agente de campo**, **coordenador de trânsito** e **administrador**.
+O Raly não é um app aberto a todos: cada área tem o seu público e o seu acesso.
 
-- Quem cria conta pelo site entra como passageiro.
-- Em instalação nova, sem nenhum usuário, a primeira conta criada vira administradora.
-- Páginas sem permissão mostram a tela de login com o motivo.
+| Área | Quem usa | Como entra |
+|---|---|---|
+| **Raly** (operacional, Consultas, Interações, Trechos e ocorrências) | Profissionais de trânsito nas rodovias | Login `admin@` · senha inicial `1234` |
+| **SmartDeskAI** | Equipe da CCO (central de atendimento do Raly). Passageiros e agentes de campo não abrem | Login `admin#` · senha inicial `4321` |
+| **TicketRal** | Passageiros. É um "Waze do passageiro": avisa problemas na via, reclama, fala com o suporte e reporta erros do app | Conta própria, criada na hora com nome, e-mail e senha |
 
-> Autenticação **simulada no navegador** (senhas com PBKDF2 e sal no `localStorage`). Não oferece segurança real: na versão final ela passa para um servidor.
+- **Passageiro usa apenas o TicketRal** (mais as páginas informativas e a própria conta). Raly, SmartDeskAI, trechos e painel ficam bloqueados.
+- **Os usuários do Raly e do SmartDeskAI são fixos e já vêm cadastrados** (`admin@` e `admin#`). **Criar conta existe apenas no TicketRal** (passageiro, com nome, e-mail e senha). Não há "criar conta" no login do Raly nem do SmartDeskAI, e o painel administrativo não cria usuários.
+- **Os logins e senhas iniciais podem ser trocados** em *Minha conta* (seções "Alterar senha" e "Alterar login"). Enquanto a senha inicial estiver em uso, a tela avisa. O passageiro troca o e-mail e a senha na própria área dele dentro do app.
+- **Problemas do aplicativo ou da plataforma:** no TicketRal o botão "Enviar mensagem pronta à equipe" abre o e-mail já endereçado a **desksmartai@gmail.com**, com assunto e texto prontos para a equipe do SmartDeskAI e do Raly (há também "Abrir no Gmail"). O app não envia sozinho: o passageiro confere e envia.
+- O login do `admin#` também administra a plataforma (painel administrativo). O do `admin@` não abre o SmartDeskAI.
+- O ícone do app (aba do navegador) é o robô do próprio Raly.
 
-As contas e os dados de teste ficam em `src/demo/` e não aparecem no site. Veja `src/demo/LEIAME.md`.
+> Autenticação **simulada no navegador** (senhas com PBKDF2 e sal no `localStorage`). Não oferece segurança real: na versão final ela passa para um servidor. As senhas iniciais `1234` e `4321` valem só para a demonstração acadêmica; troque-as no primeiro acesso.
+
+As contas de teste (desenvolvimento) ficam em `src/demo/` e as contas iniciais de cada área em `src/data/contasBase.js`. Veja `src/demo/LEIAME.md`.
 
 ## Estrutura
 
@@ -180,7 +196,10 @@ raly-local/     servidor local de voz (Piper + Whisper) e ponte para o Ollama
 ## Voz
 
 - Painel flutuante do Raly em todas as telas (`Alt+R` abre, `Alt+V` liga o microfone).
-- Perfis de voz pt-BR: **Feminina** (padrão), Padrão, Motorista, Alerta e Noturno.
+- Perfis de voz pt-BR: **Feminina** (padrão), Padrão, Motorista, Alerta (mais rápida) e Noturna (mais calma).
+- **Voz embutida, sem instalar nada além do `npm install`:** quando o navegador não tem voz em português, o Raly usa o Piper em WebAssembly (pacote `@diffusionstudio/vits-web`, voz `pt_BR-faber-medium`). Na primeira fala o navegador baixa o modelo (~60 MB) e guarda em cache; depois funciona sem internet. O servidor local (`raly-local/`) continua opcional e, quando ligado, tem prioridade.
+- A página inicial não tem mais o botão "Falar com o Raly": falar com o Raly é só depois do login. "Ouvir a apresentação" narra a demonstração.
+- **A personalização da voz só aparece depois do login**, no painel do Raly. A página inicial não tem mais a demonstração de voz.
 - Ações críticas (confirmar revisão, criar ticket, mudar status) pedem "sim, confirmo".
 - Exemplos de comandos: "abrir tickets", "abrir SmartDeskAI", "veículo parado no acostamento, DEMO-101, km 42, sentido interior", "corrigir sentido para capital", "confirmar revisão", "criar ticket". A lista completa fica em Raly › Voz e comandos.
 - O áudio não é gravado nem enviado a serviços externos quando o servidor local está ligado. Sem ele, o reconhecimento do Chrome/Edge usa um serviço online do navegador.

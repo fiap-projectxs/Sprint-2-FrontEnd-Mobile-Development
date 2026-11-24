@@ -72,7 +72,7 @@ export default function useAuth() {
     registrar('cadastro', refUsuarios.current.length === 1 ? 'Primeira conta criada (administrador)' : 'Conta de passageiro criada', u)
     const s = sessaoDe(reg)
     setSessao(s); salvarSessao(s)
-    return { ok: true }
+    return { ok: true, sessao: s }
   }, [gravarUsuarios, registrar])
 
   // ----- Administração (a tela só abre para o perfil admin) -----
@@ -105,7 +105,7 @@ export default function useAuth() {
     if (!alvo) return { ok: false, erro: 'Usuário não encontrado.' }
     const sal = novoSal()
     const hash = await hashSenha(nova, sal)
-    gravarUsuarios((l) => l.map((x) => (x.id === id ? { ...x, sal, hash } : x)))
+    gravarUsuarios((l) => l.map((x) => (x.id === id ? { ...x, sal, hash, senhaInicial: false } : x)))
     registrar('senha_redefinida', alvo.usuario, autor)
     return { ok: true }
   }, [gravarUsuarios, registrar])
@@ -125,7 +125,21 @@ export default function useAuth() {
     return redefinirSenha(u.id, nova, u.usuario)
   }, [sessao, redefinirSenha])
 
+  // Troca o login (e-mail ou usuário) de quem está logado. Passageiro continua precisando de e-mail válido.
+  const alterarLogin = useCallback(async (novo, senha) => {
+    const u = refUsuarios.current.find((x) => x.id === sessao?.id)
+    if (!u || !(await conferirSenha(u, senha))) return { ok: false, erro: 'A senha atual está incorreta.' }
+    const n = novo.trim().toLowerCase()
+    if (u.perfil === 'passageiro' ? !ehEmail(n) : n.length < 3) return { ok: false, erro: u.perfil === 'passageiro' ? 'Informe um e-mail válido.' : 'O login precisa de pelo menos 3 caracteres.' }
+    if (refUsuarios.current.some((x) => x.usuario === n && x.id !== u.id)) return { ok: false, erro: 'Já existe uma conta com este login.' }
+    gravarUsuarios((l) => l.map((x) => (x.id === u.id ? { ...x, usuario: n } : x)))
+    const s = { ...sessao, usuario: n }
+    setSessao(s); salvarSessao(s)
+    registrar('login_alterado', `${u.usuario} -> ${n}`, n)
+    return { ok: true }
+  }, [sessao, gravarUsuarios, registrar])
+
   const limparAuditoria = useCallback(() => { setAuditoria([]); salvarAuditoria([]) }, [])
 
-  return { pronto, usuarios, sessao, auditoria, registrar, entrar, sair, cadastrar, criarUsuario, atualizarUsuario, redefinirSenha, removerUsuario, alterarSenha, limparAuditoria }
+  return { pronto, usuarios, temConta: usuarios.some((u) => u.perfil === 'passageiro' || u.ultimoAcesso), sessao, auditoria, registrar, entrar, sair, cadastrar, criarUsuario, atualizarUsuario, redefinirSenha, removerUsuario, alterarSenha, alterarLogin, limparAuditoria }
 }

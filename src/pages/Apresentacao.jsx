@@ -3,7 +3,6 @@ import Icon from '../components/Icon.jsx'
 import Onda from '../components/Onda.jsx'
 import RalyLogo from '../components/RalyLogo.jsx'
 import RalyRosto from '../components/RalyRosto.jsx'
-import PersonalizarVoz from '../components/PersonalizarVoz.jsx'
 import useReveal from '../utils/useReveal.js'
 
 const RalyRosto3D = lazy(() => import('../components/RalyRosto3D.jsx'))
@@ -21,7 +20,7 @@ const CENAS = [
 
 // O que é dito em cada cena (fala em voz alta quando o visitante ativa o som).
 const FALAS = {
-  ouve: [{ t: 'Veículo parado no acostamento, DEMO-101, quilômetro 42.', papel: 'outra' }],
+  ouve: [{ t: 'Eu sou o Raly. Ouço o relato de quem está na rodovia e organizo tudo para revisão. Veja um exemplo.' }, { t: 'Veículo parado no acostamento, DEMO-101, quilômetro 42.', papel: 'outra' }],
   entende: [{ t: 'Entendi: veículo parado, rodovia DEMO-101, quilômetro 42. O sentido ainda não foi informado.' }],
   pergunta: [{ t: 'Qual é o sentido da via?' }, { t: 'Sentido interior.', papel: 'outra' }],
   revisa: [{ t: 'Resumo pronto para revisão. Nada segue sem a sua confirmação. Diga: sim, confirmo.' }],
@@ -79,38 +78,53 @@ function Palco({ cena }) {
 }
 
 function CenaDemo({ voz, som, onSom }) {
+  const [preparando, setPreparando] = useState(false)
+  const [erroVoz, setErroVoz] = useState('')
+  useEffect(() => {
+    const f = (e) => setPreparando(Boolean(e.detail))
+    const g = (e) => setErroVoz(String(e.detail || ''))
+    window.addEventListener('raly:voz-preparando', f)
+    window.addEventListener('raly:voz-erro', g)
+    return () => { window.removeEventListener('raly:voz-preparando', f); window.removeEventListener('raly:voz-erro', g) }
+  }, [])
   const [i, setI] = useState(0)
   const [pausa, setPausa] = useState(false)
   const [falaAtual, setFalaAtual] = useState('')
   const [ref, visto] = useReveal()
   const cena = CENAS[i]
-  const falar = voz.falar
-  const calar = voz.calar
+  const falarRef = useRef(voz.falar)
+  const calarRef = useRef(voz.calar)
+  // Refs estaveis: se falar/calar mudarem de identidade o efeito reiniciava a fala (gagueira).
+  useEffect(() => { falarRef.current = voz.falar; calarRef.current = voz.calar })
+  // Com som ligado a narração não depende de a seção estar visível: senão ela reiniciava ao rolar a tela e cortava a fala.
+  const ativo = som || visto
 
   useEffect(() => {
-    if (!visto) return undefined
+    if (!ativo) return undefined
     if (som) {
       // Narração: fala as linhas da cena e só então passa para a próxima.
       let vivo = true
       let guarda = 0
       let proxima = 0
       const falas = FALAS[cena.id]
-      const avancar = () => { if (vivo) proxima = setTimeout(() => vivo && setI((n) => (n + 1) % CENAS.length), 900) }
+      // Na última cena a narração termina (não fica repetindo em loop).
+      const avancar = () => { if (vivo) proxima = setTimeout(() => { if (!vivo) return; if (i >= CENAS.length - 1) { onSom(); setI(0) } else setI(i + 1) }, 350) }
       const rodar = (n) => {
         if (!vivo) return
         clearTimeout(guarda)
-        if (n >= falas.length) { setFalaAtual(''); avancar(); return }
+        if (n >= falas.length) { avancar(); return }
         setFalaAtual(falas[n].t)
-        guarda = setTimeout(() => rodar(n + 1), falas[n].t.length * 120 + 4000) // segurança se a fala não terminar
-        falar(falas[n].t, { papel: falas[n].papel, aoFim: () => rodar(n + 1) })
+        guarda = setTimeout(() => rodar(n + 1), falas[n].t.length * 120 + 25000) // segurança se a fala não terminar
+        falarRef.current(falas[n].t, { papel: falas[n].papel, arquivo: `/narracao/${cena.id}-${n}.wav`, aoFim: () => rodar(n + 1) })
       }
       rodar(0)
-      return () => { vivo = false; clearTimeout(guarda); clearTimeout(proxima); calar() }
+      return () => { vivo = false; clearTimeout(guarda); clearTimeout(proxima); calarRef.current() }
     }
     if (pausa || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined
     const t = setTimeout(() => setI((n) => (n + 1) % CENAS.length), 4200)
     return () => clearTimeout(t)
-  }, [i, pausa, visto, som, cena.id, falar, calar])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i, pausa, som, ativo, cena.id])
 
   const duracao = som ? duracaoCena(cena.id) : 4200
   return (
@@ -118,12 +132,12 @@ function CenaDemo({ voz, som, onSom }) {
       <div className="demo__texto" aria-live="polite">
         <p className="eyebrow">Do relato ao ticket</p>
         <h2 key={cena.id} className="demo__titulo">{cena.titulo}</h2>
-        <p className="demo__legenda">{som && falaAtual ? <><Icon nome="mic" tamanho={16} /> “{falaAtual}”</> : cena.legenda}</p>
+        <p className="demo__legenda">{som && preparando ? 'Preparando a voz do Raly (só na primeira vez, pode levar um minuto)…' : som && falaAtual ? <><Icon nome="mic" tamanho={16} /> “{falaAtual}”</> : cena.legenda}</p>
+        {som && erroVoz && <p className="lp__nota lp__nota--alerta" role="alert">Não consegui gerar a voz: {erroVoz}. Confira a internet na primeira vez (o modelo da voz é baixado) e recarregue com Ctrl+F5.</p>}
         <button type="button" className={`btn ${som ? 'btn--contorno' : 'btn--primario'}`} onClick={onSom} disabled={!voz.suportaFala}>
           <Icon nome="mic" tamanho={16} /> {som ? 'Parar a narração' : 'Ouvir a apresentação'}
         </button>
         {!voz.suportaFala && <p className="lp__nota">Este navegador não fala em voz alta. Use Chrome ou Edge.</p>}
-        {voz.suportaFala && voz.vozPt === false && <p className="lp__nota lp__nota--alerta">Nenhuma voz em português neste computador, então o Raly mostra só o texto. Para ouvir a voz feminina offline, ligue o servidor local (pasta raly-local). Ou instale “Português (Brasil)” nas configurações de voz do Windows, ou use o Edge (vozes Natural).</p>}
         <ol className="demo__passos">
           {CENAS.map((c, n) => (
             <li key={c.id}>
@@ -156,7 +170,8 @@ function Secao({ id, etiqueta, titulo, destaque, texto, itens, botao, onBotao, i
   )
 }
 
-export default function Apresentacao({ navegar, voz }) {
+export default function Apresentacao({ navegar, voz, entrar }) {
+  const entrarNaPlataforma = () => { window.dispatchEvent(new Event('raly:turbo')); entrar() }
   const [progresso, setProgresso] = useState(0)
   const [som, setSom] = useState(false)
   const estado3d = voz.falando ? 'falando' : voz.ouvindo ? 'ouvindo' : 'pronto'
@@ -179,13 +194,12 @@ export default function Apresentacao({ navegar, voz }) {
       <header className="lp__topo">
         <button type="button" className="lp__marca" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Raly, voltar ao topo"><RalyLogo tamanho={34} /> <strong>Raly</strong></button>
         <nav className="lp__nav" aria-label="Seções da apresentação">
-          <button type="button" onClick={() => rolar('voz')}>Voz</button>
           <button type="button" onClick={() => rolar('como')}>Como funciona</button>
           <button type="button" onClick={() => rolar('confianca')}>Confiança</button>
           <button type="button" onClick={() => rolar('ecossistema')}>Agentes</button>
           <button type="button" onClick={() => navegar('agentes')}>Ecossistema</button>
         </nav>
-        <button type="button" className="btn btn--claro lp__entrar" onClick={() => navegar('inicio')}>Entrar na plataforma</button>
+        <button type="button" className="btn btn--primario lp__entrar lp__entrar--brilho" onClick={entrarNaPlataforma}>Entrar na plataforma</button>
       </header>
 
       <section className="lp__hero">
@@ -196,7 +210,6 @@ export default function Apresentacao({ navegar, voz }) {
           <h1>Fale. <em>O Raly</em> organiza.</h1>
           <p className="lp__sub">Relatos de campo viram registros claros, completos e prontos para revisão. Sem digitar. Sem tirar a atenção da via. Com uma pessoa sempre no comando.</p>
           <div className="lp__acoes">
-            <button type="button" className="btn btn--primario btn--grande" onClick={() => navegar('raly', 'conversa')}><Icon nome="mic" /> Falar com o Raly</button>
             <button type="button" className="btn btn--contorno btn--grande" onClick={ouvirApresentacao} disabled={!voz.suportaFala}><Icon nome="mic" /> Ouvir a apresentação</button>
           </div>
         </div>
@@ -206,20 +219,6 @@ export default function Apresentacao({ navegar, voz }) {
             <RalyRosto3D tamanho={380} estado={estado3d} />
           </Suspense>
           <Onda barras={40} altura={56} ativa={voz.falando || voz.ouvindo || som} />
-        </div>
-      </section>
-
-      <section id="voz" className="lp__voz">
-        <div className="lp__voz-cartao painel-vidro">
-          <p className="eyebrow">Demo de voz</p>
-          <h2>Ouça o <em>Raly</em> falando.</h2>
-          <p>Escolha uma voz, ajuste a velocidade e toque em “Ouvir”. Funciona offline quando o servidor local está ligado.</p>
-          <PersonalizarVoz voz={voz} />
-          <div className="lp__acoes">
-            <button type="button" className="btn btn--primario btn--grande" onClick={() => voz.falar('Olá! Eu sou o Raly. Fale o relato e eu organizo as informações para a sua revisão.')} disabled={!voz.suportaFala}><Icon nome="mic" /> Ouvir a voz do Raly</button>
-            <button type="button" className="btn btn--contorno btn--grande" onClick={() => navegar('raly', 'conversa')}>Conversar por voz</button>
-          </div>
-          {voz.suportaFala && voz.vozPt === false && <p className="lp__nota lp__nota--alerta">Sem voz em português neste computador. Ligue o servidor local (pasta raly-local) ou instale “Português (Brasil)” no Windows.</p>}
         </div>
       </section>
 
@@ -299,8 +298,7 @@ export default function Apresentacao({ navegar, voz }) {
         <h2>{PROMESSA}</h2>
         <p>Pronto para ver o Raly trabalhando?</p>
         <div className="lp__acoes">
-          <button type="button" className="btn btn--primario btn--grande" onClick={() => navegar('raly', 'conversa')}><Icon nome="mic" /> Falar com o Raly</button>
-          <button type="button" className="btn btn--contorno btn--grande" onClick={() => navegar('inicio')}>Entrar na plataforma</button>
+          <button type="button" className="btn btn--primario btn--grande lp__entrar--brilho" onClick={entrarNaPlataforma}>Entrar na plataforma</button>
         </div>
       </section>
 

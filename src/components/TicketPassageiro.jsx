@@ -6,6 +6,7 @@ import { Selecao, Texto } from './Campo.jsx'
 import { StatusBadge } from './StatusBadge.jsx'
 import { formatarDataHora } from '../utils/datas.js'
 
+const EMAIL_SUPORTE = 'desksmartai@gmail.com'
 const MOTIVOS = ['Reclamação', 'Dúvida', 'Sugestão', 'Outro']
 
 // Visão do passageiro no TicketRal: registrar um ticket (reclamação ou contato com o suporte do Raly)
@@ -15,6 +16,8 @@ export default function TicketPassageiro({ usuario, tickets, criarTicket, avisar
   const [trecho, setTrecho] = useState('')
   const [texto, setTexto] = useState('')
   const [erro, setErro] = useState('')
+  const [tipoApp, setTipoApp] = useState('Aplicativo')
+  const [textoApp, setTextoApp] = useState('')
   const meus = tickets.filter((t) => t.dono === usuario.usuario)
 
   function enviar(e) {
@@ -29,12 +32,21 @@ export default function TicketPassageiro({ usuario, tickets, criarTicket, avisar
     setTexto(''); setTrecho(''); setErro('')
   }
 
+  // Relato de problema do aplicativo ou da plataforma: abre o e-mail do passageiro já endereçado ao suporte.
+  const assuntoApp = encodeURIComponent(`[TicketRal] Problema no ${tipoApp.toLowerCase()}`)
+  const relato = textoApp.trim() || '(descreva aqui o que aconteceu, em qual tela e o que você esperava)'
+  const corpoApp = encodeURIComponent(
+    `Olá, equipe do SmartDeskAI e do Raly!\n\nEstou usando o TicketRal e encontrei um problema no ${tipoApp.toLowerCase()} do Raly.\n\nO que aconteceu:\n${relato}\n\nMeus dados para retorno:\nNome: ${usuario.nome}\nLogin: ${usuario.usuario}\n\nObrigado!`,
+  )
+  const hrefApp = `mailto:${EMAIL_SUPORTE}?subject=${assuntoApp}&body=${corpoApp}`
+  const hrefGmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${EMAIL_SUPORTE}&su=${assuntoApp}&body=${corpoApp}`
+
   return (
     <div className="pagina">
       <div className="pagina__topo">
         <div>
           <h1>TicketRal · suporte ao passageiro</h1>
-          <p className="texto-suave">Registre uma reclamação ou fale com o suporte do Raly. Quem atende é a equipe de trânsito na CCO. Nada é enviado a sistemas reais.</p>
+          <p className="texto-suave">O TicketRal é o seu espaço, como um Waze do passageiro: avise problemas na via, reclame ou fale com o suporte do Raly. Quem atende é a equipe de trânsito na CCO. Nada é enviado a sistemas reais.</p>
         </div>
       </div>
       <div className="grade grade--2">
@@ -63,6 +75,15 @@ export default function TicketPassageiro({ usuario, tickets, criarTicket, avisar
           )}
         </Card>
       </div>
+      <Card titulo="Problema no aplicativo ou na plataforma?" subtitulo={`Avise por e-mail: ${EMAIL_SUPORTE}`}>
+        <div className="form-op">
+          <Selecao id="tp-app-tipo" rotulo="O problema é no" valor={tipoApp} onChange={setTipoApp} opcoes={['Aplicativo', 'Plataforma']} todas={null} />
+          <Texto id="tp-app-texto" rotulo="O que aconteceu" linhas={3} valor={textoApp} onChange={setTextoApp} />
+          <a className="btn btn--primario" href={hrefApp}>Enviar mensagem pronta à equipe</a>
+          <a className="btn btn--secundario" href={hrefGmail} target="_blank" rel="noopener noreferrer">Abrir no Gmail</a>
+          <p className="texto-suave">Abre o seu programa de e-mail com a mensagem pronta para {EMAIL_SUPORTE}. Você só confere e envia.</p>
+        </div>
+      </Card>
     </div>
   )
 }

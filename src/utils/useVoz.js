@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { falarEmbutida, vozEmbutidaDisponivel } from './vozEmbutida.js'
 import { falarLocal, statusLocal, transcreverLocal } from './local.js'
 
 // Voz pelo navegador (Web Speech API). Reconhecimento: SpeechRecognition (pt-BR).
@@ -59,6 +60,21 @@ const MENSAGENS_ERRO = {
   network: 'O reconhecimento de voz do navegador precisa de internet e não conseguiu conectar.',
 }
 
+// Deixa a voz mais alta e firme: ganho + compressor (evita distorcer). Se o navegador nao permitir, toca no volume normal.
+let ctxVolume = null
+function amplificar(audio, ganho = 2.6) {
+  try {
+    if (audio.__amplificado) return
+    ctxVolume = ctxVolume || new (window.AudioContext || window.webkitAudioContext)()
+    if (ctxVolume.state === 'suspended') ctxVolume.resume()
+    const fonte = ctxVolume.createMediaElementSource(audio)
+    const g = ctxVolume.createGain(); g.gain.value = ganho
+    const c = ctxVolume.createDynamicsCompressor()
+    c.threshold.value = -18; c.knee.value = 12; c.ratio.value = 6; c.attack.value = 0.003; c.release.value = 0.15
+    fonte.connect(g); g.connect(c); c.connect(ctxVolume.destination)
+    audio.__amplificado = true
+  } catch { /* segue sem amplificar */ }
+}
 export default function useVoz({ aoOuvir, continuo }) {
   const [ouvindo, setOuvindo] = useState(false)
   const [parcial, setParcial] = useState('')
@@ -81,6 +97,13 @@ export default function useVoz({ aoOuvir, continuo }) {
   const [local, setLocal] = useState(null)
   const localRef = useRef(null)
   const audioRef = useRef(null)
+  // Enquanto o Raly fala (e logo depois), o microfone nao pode tratar a propria voz dele como comando.
+  const falandoRef = useRef(false)
+  const silencioAte = useRef(0)
+  useEffect(() => {
+    if (falando) falandoRef.current = true
+    else if (falandoRef.current) { falandoRef.current = false; silencioAte.current = Date.now() + 900 }
+  }, [falando])
   useEffect(() => { localRef.current = local }, [local])
   useEffect(() => {
     let ativo = true
@@ -102,11 +125,11 @@ export default function useVoz({ aoOuvir, continuo }) {
   // Reconhecimento offline: grava o microfone, detecta o fim da fala pelo silêncio e manda ao Whisper local.
   // Funciona em qualquer navegador (inclusive Brave, que bloqueia o reconhecimento online).
   const iniciarLocalRef = useRef(null)
-  const iniciarLocal = useCallback(async () => {
+  const iniciarLocal = useCallback(async (reinicio = false) => {
     setErro('')
     querOuvirRef.current = true
-    if (TEM_FALA) window.speechSynthesis.cancel()
-    audioRef.current?.pause?.()
+    // Reinicio da escuta continua nao pode cortar a resposta que o Raly acabou de comecar a falar.
+    if (!reinicio) { if (TEM_FALA) window.speechSynthesis.cancel(); audioRef.current?.pause?.() }
     let stream
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }) } catch { setErro(MENSAGENS_ERRO['not-allowed']); querOuvirRef.current = false; return }
     const ctx = new AudioContext()
@@ -136,11 +159,11 @@ export default function useVoz({ aoOuvir, continuo }) {
         setParcial('Transcrevendo…')
         try {
           const texto = await transcreverLocal(new Blob(pedacos, { type: gravador.mimeType }))
-          if (texto) aoOuvirRef.current?.(texto, 'voz')
+          if (texto && !falandoRef.current && silencioAte.current <= inicio) aoOuvirRef.current?.(texto, 'voz')
         } catch { setErro('Não consegui transcrever. O servidor local está ligado e com o reconhecimento instalado? Rode o iniciar.bat de novo.') }
       }
       setParcial('')
-      if (continuo && querOuvirRef.current) iniciarLocalRef.current?.()
+      if (continuo && querOuvirRef.current) iniciarLocalRef.current?.(true)
       else { querOuvirRef.current = false; setOuvindo(false) }
     }
     gravador.start()
@@ -169,7 +192,7 @@ export default function useVoz({ aoOuvir, continuo }) {
         else interino += txt
       }
       setParcial(interino)
-      if (final.trim()) aoOuvirRef.current?.(final.trim(), 'voz')
+      if (final.trim() && !falandoRef.current && Date.now() > silencioAte.current) aoOuvirRef.current?.(final.trim(), 'voz')
     }
     rec.onerror = (ev) => {
       if (ev.error === 'no-speech' && continuo) return
@@ -214,6 +237,22 @@ export default function useVoz({ aoOuvir, continuo }) {
     const minha = ++seqFala.current
     audioRef.current?.pause?.()
     audioRef.current = null
+    // Áudio já gravado (a demonstração da página inicial): toca na hora, sem gerar voz.
+    if (opcoes.arquivo) {
+      try {
+        const audio = new Audio(opcoes.arquivo)
+        audio.playbackRate = perfilRef.current.velocidade
+        audio.onplay = () => setFalando(true)
+        audio.onended = () => { setFalando(false); opcoes.aoFim?.() }
+        audio.onerror = () => setFalando(false)
+        audioRef.current = audio
+        amplificar(audio); await audio.play()
+        return
+      } catch (e) {
+        if (minha !== seqFala.current || e?.name === 'AbortError') return
+        setFalando(false)
+      }
+    }
     // 1º: voz local offline do perfil escolhido (padrao, motorista, alerta, noturno).
     const idLocal = perfilRef.current.perfilLocal
     if (localRef.current?.perfis?.[idLocal]?.pronto) {
@@ -228,15 +267,36 @@ export default function useVoz({ aoOuvir, continuo }) {
         audio.onended = () => { setFalando(false); opcoes.aoFim?.() }
         audio.onerror = () => { setFalando(false); opcoes.aoFim?.() }
         audioRef.current = audio
-        await audio.play()
+        amplificar(audio); await audio.play()
         return
       } catch { /* servidor local caiu: segue para a voz do navegador */ }
       if (minha !== seqFala.current) return
     }
-    if (!TEM_FALA) return
-    window.speechSynthesis.cancel()
-    await aguardarVozes()
+    // 2º: voz embutida no site (Piper em WebAssembly, vem do npm install). Usada quando o navegador não tem voz em português.
+    if (TEM_FALA) { window.speechSynthesis.cancel(); await aguardarVozes() }
     if (minha !== seqFala.current) return
+    if ((!TEM_FALA || !escolherVozPt(perfilRef.current.genero).voz) && vozEmbutidaDisponivel()) {
+      try {
+        setFalando(true)
+        const audio = await falarEmbutida(texto)
+        if (minha !== seqFala.current) return
+        audio.playbackRate = perfilRef.current.velocidade
+        audio.onended = () => { setFalando(false); opcoes.aoFim?.() }
+        audio.onerror = () => { setFalando(false); opcoes.aoFim?.() }
+        audioRef.current = audio
+        amplificar(audio); await audio.play()
+        window.dispatchEvent(new CustomEvent('raly:voz-erro', { detail: '' }))
+        return
+      } catch (e) {
+        // Outra fala (ou calar) assumiu no meio: não é erro, só foi interrompida.
+        if (minha !== seqFala.current || e?.name === 'AbortError') return
+        setFalando(false)
+        console.error('Voz embutida falhou:', e)
+        window.dispatchEvent(new CustomEvent('raly:voz-erro', { detail: String(e?.message || e) }))
+      }
+      if (minha !== seqFala.current) return
+    }
+    if (!TEM_FALA) return
     const p = perfilRef.current
     const genero = opcoes.papel === 'outra' ? (p.genero === 'feminina' ? 'masculina' : 'feminina') : p.genero
     const { voz: pt, exato } = escolherVozPt(genero)
@@ -264,7 +324,7 @@ export default function useVoz({ aoOuvir, continuo }) {
   useEffect(() => () => { querOuvirRef.current = false; recRef.current?.abort?.(); audioRef.current?.pause?.(); if (TEM_FALA) window.speechSynthesis.cancel() }, [])
 
   const localPronto = !!local && Object.values(local.perfis || {}).some((p) => p.pronto)
-  return { local, localPronto, suportaReconhecimento: !!SR || !!local?.stt?.ok, suportaFala: TEM_FALA || localPronto, vozPt: localPronto ? true : vozPt, perfil, setPerfil, vozEscolhida: TEM_FALA ? escolherVozPt(perfil.genero) : { voz: null, exato: false }, ouvindo, parcial, erro, falando, iniciar, parar, falar, calar }
+  return { local, localPronto, suportaReconhecimento: !!SR || !!local?.stt?.ok, suportaFala: TEM_FALA || localPronto || vozEmbutidaDisponivel(), vozPt: localPronto || vozEmbutidaDisponivel() ? true : vozPt, perfil, setPerfil, vozEscolhida: TEM_FALA ? escolherVozPt(perfil.genero) : { voz: null, exato: false }, ouvindo, parcial, erro, falando, iniciar, parar, falar, calar }
 }
 
 

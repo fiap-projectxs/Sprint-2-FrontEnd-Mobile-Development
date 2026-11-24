@@ -108,7 +108,7 @@ export default function SobreRaly({ sub, mudarSub, navegar }) {
                 <div className="marca-fundo marca-fundo--claro"><RalyLogo tamanho={56} /><RalyLogo tamanho={36} /></div>
               </div>
             </Card>
-            <Card titulo="Cores" subtitulo="Azul-marinho para confiança, roxo para voz e ação">
+            <Card titulo="Cores" subtitulo="Azul-marinho para confiança, azul-petróleo para voz e ação">
               <ul className="cores">
                 {CORES.map((c) => (
                   <li key={c.hex}><span className="cores__amostra" style={{ background: c.hex }} aria-hidden="true" /><div><strong>{c.nome}</strong> <code>{c.hex}</code><p className="texto-suave">{c.uso}</p></div></li>
@@ -121,7 +121,7 @@ export default function SobreRaly({ sub, mudarSub, navegar }) {
               <ul className="lista-simples">
                 {PERSONALIDADE.map((p) => <li key={p.traco}><Icon nome="check" tamanho={16} /> <span><strong>{p.traco}.</strong> {p.texto}</span></li>)}
               </ul>
-              <p className="texto-suave">Voz feminina ou masculina, à escolha de quem usa.</p>
+              <p className="texto-suave">Cinco vozes offline em português: feminina, padrão, motorista, alerta (mais rápida, para ocorrências) e noturna (mais calma, para viagem longa). Cada pessoa escolhe a sua em Minha conta, depois do login.</p>
             </Card>
             <Card titulo="Como ele fala" subtitulo="O tom da marca">
               <h4>Diz</h4>

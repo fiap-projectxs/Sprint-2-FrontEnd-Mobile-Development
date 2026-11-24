@@ -13,7 +13,7 @@ export const ETAPAS_TRABALHO = [
   { titulo: 'Pergunta', texto: 'Se falta algo importante, faz uma pergunta curta por vez. Nunca completa um campo por suposição: o que não foi dito fica “não informado”.', real: 'Funciona.' },
   { titulo: 'Resume', texto: 'Monta um cartão com cada campo marcado como informado, precisa confirmar ou não informado, sempre dizendo se veio do relato, de simulação ou de confirmação.', real: 'Funciona.' },
   { titulo: 'Espera um humano', texto: 'Antes de qualquer ação crítica, pede confirmação explícita (“sim, confirmo”). Quem decide é a pessoa autorizada.', real: 'Funciona como confirmação visual de demonstração.' },
-  { titulo: 'Passa adiante', texto: 'Com a revisão feita, o coordenador de trânsito autenticado pode abrir um ticket. O Raly nunca diz que acionou equipe ou CCO sem confirmação real.', real: 'Ticket local de demonstração. Sem integração real.' },
+  { titulo: 'Passa adiante', texto: 'Com a revisão feita, a equipe da CCO passa a tratar o registro no SmartDeskAI. O Raly nunca diz que acionou equipe ou CCO sem confirmação real.', real: 'Ticket local de demonstração. Sem integração real.' },
 ]
 
 export const OBJETIVOS = [
@@ -22,7 +22,7 @@ export const OBJETIVOS = [
   { icone: 'shield', titulo: 'Decisão humana', texto: 'Confirmação explícita antes de registrar, encaminhar ou encerrar. Decisões críticas ficam com pessoas autorizadas.' },
   { icone: 'clock', titulo: 'Rastreabilidade', texto: 'Cada interação com texto, horário e resposta, para auditar depois quem disse o quê.' },
   { icone: 'info', titulo: 'Honestidade sobre o que sabe', texto: 'Diferenciar relato, informação simulada e informação confirmada. Dizer quando não consegue confirmar.' },
-  { icone: 'users', titulo: 'Privacidade por perfil', texto: 'Mostrar o mínimo necessário para cada perfil. Por isso o TicketRal exige login do coordenador.' },
+  { icone: 'users', titulo: 'Privacidade por perfil', texto: 'Mostrar o mínimo necessário para cada perfil. Por isso a fila de tickets e o SmartDeskAI exigem login da equipe da CCO.' },
 ]
 
 export const PERSONAS_NECESSIDADES = [
@@ -87,9 +87,9 @@ export const VALORES = [
 ]
 
 export const CORES = [
-  { nome: 'Azul-marinho', hex: '#0f1f3d', uso: 'Base, confiança, cabeçalho' },
-  { nome: 'Azul-escuro', hex: '#1b2e4c', uso: 'Menus e painéis' },
-  { nome: 'Roxo Raly', hex: '#6d4aff', uso: 'Destaque, ação e voz' },
-  { nome: 'Lilás', hex: '#9a84ff', uso: 'Detalhes e brilho' },
-  { nome: 'Âmbar sinal', hex: '#ffb020', uso: 'Luz da antena, atenção' },
+  { nome: 'Azul-marinho', hex: '#1b2e49', uso: 'Fundo e base, a cor da capa dos relatórios' },
+  { nome: 'Azul-petróleo', hex: '#0b6f86', uso: 'Destaque, ação e voz' },
+  { nome: 'Ciano', hex: '#5fd0e6', uso: 'Detalhes, brilho e foco' },
+  { nome: 'Âmbar sinal', hex: '#f5c266', uso: 'Luz da antena e atenção' },
+  { nome: 'Cinza névoa', hex: '#adb4be', uso: 'Textos de apoio e bordas' },
 ]
