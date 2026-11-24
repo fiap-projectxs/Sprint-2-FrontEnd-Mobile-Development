@@ -4,7 +4,7 @@
 
 ### Fale. O Raly organiza.
 
-Agente de voz para quem trabalha em rodovias, com quatro agentes e acesso por perfil.
+Agente de voz para quem trabalha em rodovias, com três agentes e acesso por perfil.
 
 ![React](https://img.shields.io/badge/React-19-0b6f86?style=flat-square&logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-1b2e49?style=flat-square&logo=vite&logoColor=white)
@@ -20,7 +20,7 @@ Repositório: https://github.com/fiap-projectxs/Sprint-1---Front-End-Mobile-Deve
 
 > **Projeto em desenvolvimento.** O site e o código estão em construção e mudam a cada entrega. Os dados são fictícios e nada aqui é produto final.
 
-**Sumário:** [O que é](#o-que-é) · [Agentes](#os-quatro-agentes) · [Fluxo](#como-funciona-o-fluxo) · [Como rodar](#como-rodar) · [Acesso](#contas-e-níveis-de-acesso) · [Estrutura](#estrutura) · [Deploy](#deploy-railway) · [Limitações](#limitações)
+**Sumário:** [O que é](#o-que-é) · [Agentes](#os-três-agentes-e-quem-usa-cada-um) · [Fluxo](#como-funciona-o-fluxo) · [Como rodar](#como-rodar) · [Acesso](#contas-e-níveis-de-acesso) · [Estrutura](#estrutura) · [Deploy](#deploy-railway) · [Limitações](#limitações)
 
 ## O que é
 
@@ -28,18 +28,26 @@ O **Raly** é um agente de **voz** para quem trabalha em rodovias (inspeção de
 
 O Raly **não decide gravidade, não aciona equipes e não inventa dados**: ele organiza informação e deixa a decisão com pessoas autorizadas.
 
-## Os quatro agentes
+## Os três agentes e quem usa cada um
 
-A plataforma reúne quatro frentes, cada uma para um público e com **nível de acesso por perfil**:
+O projeto reunia quatro frentes, mas um único grupo não consegue cobrir todas com a mesma profundidade. Por isso o grupo **escolheu um público para cada uma e retirou uma delas**. Essa divisão **mudou em relação à Sprint 1** e vale daqui para frente:
 
-| Agente | Para quem | O que faz | Quem acessa |
-| --- | --- | --- | --- |
-| **Raly** | Profissionais de campo | Agente de voz: recebe o relato, extrai campos, pergunta o que falta e prepara o cartão de revisão | Agente, coordenador, administrador |
-| **Prazy** | Passageiros | Guia de dúvidas sobre a rodovia, só com conteúdo cadastrado | Qualquer pessoa logada |
-| **TicketRal** | Coordenador de trânsito | Tickets operacionais com categoria, prioridade, equipe, trecho e histórico | Coordenador, administrador |
-| **SmartDeskAI** | Passageiros e agentes | Atendimento que encaminha a demanda à área certa (aplicação própria do grupo) | Qualquer pessoa logada |
+| Agente | Público escolhido | Papel na operação |
+| --- | --- | --- |
+| **Raly** | **Profissional de trânsito nas rodovias** (inspeção de tráfego, guincho, APH) | Agente de voz do campo: recebe o relato, extrai campos, pergunta o que falta e prepara o cartão de revisão. É o foco da Sprint 2 (trechos e ocorrências). |
+| **SmartDeskAI** | **Equipe de trânsito na CCO** (centro de controle) e demais equipes de apoio | **Central de atendimento do Raly:** recebe as demandas, inclusive os tickets dos passageiros, e as encaminha para a área certa, com acompanhamento do chamado. |
+| **TicketRal** | **Passageiro** | Canal para o passageiro **registrar um ticket** (reclamação, dúvida ou sugestão) e **entrar em contato com o suporte** do Raly. Os tickets chegam à equipe da CCO. |
 
-Também há a página **Ecossistema**, que explica cada agente, e o painel de **Administração** (usuários, auditoria e configurações), só para o administrador.
+**O Prazy não existe mais.** Ele era o guia de dúvidas dos passageiros e foi retirado do projeto: a tela, o conteúdo e os comandos de voz foram removidos. O contato do passageiro agora é feito pelo TicketRal.
+
+**O que mudou em relação à Sprint 1:**
+
+- O **Raly** continua sendo o agente do profissional de campo.
+- O **SmartDeskAI** passou de atendimento de passageiros e agentes para **ferramenta da equipe da CCO**.
+- O **TicketRal** passou de ferramenta do coordenador de trânsito para **canal do passageiro**.
+- O **Prazy** foi **removido**.
+
+> O código já segue esta divisão: o **TicketRal** abre para o passageiro (que vê só os próprios tickets) e para a equipe da CCO (que vê a fila completa); o **SmartDeskAI** abre só para a equipe da CCO (coordenador e administrador); o **Raly** abre para o profissional de campo. O Prazy não tem mais tela nem acesso.
 
 ## Como funciona o fluxo
 
@@ -51,7 +59,7 @@ flowchart LR
     D --> B
     C -- não --> E[Cartão de revisão]
     E --> F{Pessoa confirma?}
-    F -- "sim, confirmo" --> G[TicketRal<br/>coordenador autenticado]
+    F -- "sim, confirmo" --> G[SmartDeskAI<br/>equipe da CCO]
     F -- não --> B
 ```
 
@@ -61,7 +69,59 @@ flowchart LR
 3. **Pergunta:** se falta algo importante, faz uma pergunta curta por vez. Nada é completado por suposição.
 4. **Resume:** cada campo fica marcado como *informado*, *a confirmar* ou *não informado*.
 5. **Espera um humano:** nada segue sem o "sim, confirmo".
-6. **Passa adiante:** o coordenador autenticado abre o ticket no TicketRal.
+6. **Passa adiante:** o registro confirmado segue para a equipe da CCO, que o trata no SmartDeskAI.
+
+## Sprint 2: trechos e ocorrências (Front End & Mobile Development)
+
+A Sprint 2 evolui o MVP para algo que o profissional de campo realmente usa. A tela fica em **Trechos e ocorrências** no menu lateral (não exige login).
+
+### O que a plataforma faz
+
+1. **Cadastra trechos** (nome da rodovia, km inicial e km final), cada um com um `id` único, e permite escolher o **trecho atual**.
+2. **Registra ocorrências** do trecho atual com tipo (vegetação, buraco, sinalização, outro), descrição e gravidade (baixa, média, alta). Cada ocorrência é gravada com `trechoId`, data e hora.
+3. **Isola os dados por trecho:** o histórico de um trecho nunca mostra ocorrências de outro.
+4. **Consulta e filtra** as ocorrências do trecho por gravidade ou tipo, com o componente `Selo` (cor, ícone e texto) e mensagens de estado vazio.
+5. **Painel do trecho:** total de ocorrências, quantas são de gravidade alta, tipo mais frequente e alerta quando há 3 ou mais ocorrências altas sem resolução.
+6. **Atualiza o status** de cada ocorrência: aberta, em atendimento ou resolvida.
+7. **Persiste no navegador:** F5 não apaga nada.
+
+### Como o estado está organizado
+
+O `App.jsx` concentra o estado e passa dados e funções por props:
+
+| Estado | Conteúdo |
+| --- | --- |
+| `trechos` | `{ id, rodovia, kmInicial, kmFinal, criadoEm }` |
+| `trechoAtualId` | `id` do trecho selecionado (ou `null`) |
+| `ocorrencias` | `{ id, trechoId, tipo, descricao, gravidade, km, status, criadoEm, atualizadoEm }` |
+
+Os registros que o Raly guarda ao confirmar uma revisão ficam em outro estado (`ocorrenciasRaly`), para não se misturar com as ocorrências de campo.
+
+### Como o `localStorage` funciona
+
+- Chave única: `raly:plataforma:v1`, com **um só objeto**: `{ versao, trechos, trechoAtualId, ocorrencias }`.
+- O objeto é **lido uma vez ao abrir** o app (`carregarPlataforma`) e **gravado a cada mudança** de `trechos`, `trechoAtualId` ou `ocorrencias` (`salvarPlataforma`, em um `useEffect` do `App.jsx`).
+- Na leitura, os dados são validados: ocorrência de trecho que não existe é descartada, e um JSON corrompido faz o app começar vazio, sem quebrar a tela.
+- Para zerar os dados: apague a chave `raly:plataforma:v1` no navegador (F12 › Application › Local Storage).
+
+### Componentes e lógica
+
+| Arquivo | Função |
+| --- | --- |
+| `src/components/FormTrecho.jsx` | Formulário controlado de trecho, com validação |
+| `src/components/ListaTrechos.jsx` | Lista de trechos e seleção do trecho atual |
+| `src/components/FormOcorrencia.jsx` | Formulário de ocorrência |
+| `src/components/ListaOcorrencias.jsx` | Lista, filtros e troca de status |
+| `src/components/PainelTrecho.jsx` | Resumo e alerta do trecho |
+| `src/components/Selo.jsx` | Selo de gravidade |
+| `src/pages/Operacao.jsx` | Monta a tela e filtra por trecho |
+| `src/utils/armazenamento.js` | Leitura e gravação no `localStorage`, geração de ids |
+| `src/utils/trechos.js` | Constantes, validações e filtros |
+| `src/utils/analisarTrecho.js` | Cálculo do painel (total, altas, tipo mais frequente, alerta) |
+
+### Prints das telas
+
+Os prints ficam em `docs/prints/`: `01-cadastro-trecho.png`, `02-registro-ocorrencia.png`, `03-lista-e-filtro.png`, `04-painel-alerta.png`, `05-status-resolvida.png`.
 
 ## Tecnologias
 
@@ -109,9 +169,9 @@ As contas e os dados de teste ficam em `src/demo/` e não aparecem no site. Veja
 ```text
 src/
   components/   Header, Nav, RalyRosto (2D), RalyRosto3D, Fundo3D, RalyDock, PersonalizarVoz...
-  pages/        Apresentacao, Agentes, Inicio, Raly, Prazy, TicketRal, SmartDeskAI,
+  pages/        Apresentacao, Agentes, Inicio, Raly, TicketRal, SmartDeskAI,
                 Consultas, Interacoes, Entrar, Conta, Admin, SobreRaly
-  data/         agentes, permissões, conteúdo do Prazy, rodovias, trechos, fluxo, marca
+  data/         agentes, permissões, rodovias, trechos, fluxo, marca
   demo/         contas, tickets e interações de demonstração (fora da interface)
   utils/        comandos de voz, extração de campos, auth, useVoz, local (servidor local)
 raly-local/     servidor local de voz (Piper + Whisper) e ponte para o Ollama
@@ -122,7 +182,7 @@ raly-local/     servidor local de voz (Piper + Whisper) e ponte para o Ollama
 - Painel flutuante do Raly em todas as telas (`Alt+R` abre, `Alt+V` liga o microfone).
 - Perfis de voz pt-BR: **Feminina** (padrão), Padrão, Motorista, Alerta e Noturno.
 - Ações críticas (confirmar revisão, criar ticket, mudar status) pedem "sim, confirmo".
-- Exemplos de comandos: "abrir tickets", "abrir SmartDeskAI", "veículo parado no acostamento, DEMO-101, km 42, sentido interior", "corrigir sentido para capital", "confirmar revisão", "criar ticket", "perguntar ao Prazy …". A lista completa fica em Raly › Voz e comandos.
+- Exemplos de comandos: "abrir tickets", "abrir SmartDeskAI", "veículo parado no acostamento, DEMO-101, km 42, sentido interior", "corrigir sentido para capital", "confirmar revisão", "criar ticket". A lista completa fica em Raly › Voz e comandos.
 - O áudio não é gravado nem enviado a serviços externos quando o servidor local está ligado. Sem ele, o reconhecimento do Chrome/Edge usa um serviço online do navegador.
 
 ## Deploy (Railway)
@@ -134,7 +194,7 @@ raly-local/     servidor local de voz (Piper + Whisper) e ponte para o Ollama
 
 ## O que funciona e o que é representado
 
-**Funciona de verdade:** voz e comandos do Raly, extração por regras, cartão de revisão e edição de campos, tickets locais, Prazy com conteúdo cadastrado, níveis de acesso, mascote e fundo 3D.
+**Funciona de verdade:** voz e comandos do Raly, extração por regras, cartão de revisão e edição de campos, tickets locais, níveis de acesso, mascote e fundo 3D.
 
 **Apenas representado:** encaminhamento a equipes, fluxo de emergência, automações e a "revisão humana" (confirmação visual; nada é enviado).
 
