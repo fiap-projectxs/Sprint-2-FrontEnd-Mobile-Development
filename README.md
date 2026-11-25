@@ -172,7 +172,7 @@ O Raly não é um app aberto a todos: cada área tem o seu público e o seu aces
 - **Passageiro usa apenas o TicketRal** (mais as páginas informativas e a própria conta). Raly, SmartDeskAI, trechos e painel ficam bloqueados.
 - **Os usuários do Raly e do SmartDeskAI são fixos e já vêm cadastrados** (`admin@` e `admin#`). **Criar conta existe apenas no TicketRal** (passageiro, com nome, e-mail e senha). Não há "criar conta" no login do Raly nem do SmartDeskAI, e o painel administrativo não cria usuários.
 - **Os logins e senhas iniciais podem ser trocados** em *Minha conta* (seções "Alterar senha" e "Alterar login"). Enquanto a senha inicial estiver em uso, a tela avisa. O passageiro troca o e-mail e a senha na própria área dele dentro do app.
-- **Problemas do aplicativo ou da plataforma:** no TicketRal o botão "Enviar mensagem pronta à equipe" abre o e-mail já endereçado a **desksmartai@gmail.com**, com assunto e texto prontos para a equipe do SmartDeskAI e do Raly (há também "Abrir no Gmail"). O app não envia sozinho: o passageiro confere e envia.
+- **Problemas do aplicativo ou da plataforma:** no TicketRal o botão "Enviar mensagem pronta à equipe" abre o e-mail já endereçado a **deskaismart@gmail.com**, com assunto e texto prontos para a equipe do SmartDeskAI e do Raly (há também "Abrir no Gmail"). O app não envia sozinho: o passageiro confere e envia.
 - O login do `admin#` também administra a plataforma (painel administrativo). O do `admin@` não abre o SmartDeskAI.
 - O ícone do app (aba do navegador) é o robô do próprio Raly.
 
